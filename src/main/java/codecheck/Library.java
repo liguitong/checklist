@@ -6,6 +6,8 @@ package codecheck;
 public class Library {
     public boolean someLibraryMethod() {
         System.out.println("The method is called!");
+        String aLongString = "This variable has nothing, but it's just a long statement.we use this line to make a " +
+                "test. So u don't need to care about this line.But if u had received this,u can finish it!";
         return true;
     }
 }
