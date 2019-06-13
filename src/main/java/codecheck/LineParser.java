@@ -13,54 +13,70 @@ import java.util.concurrent.ConcurrentHashMap;
 
 public class LineParser {
     private static final Logger logger = LoggerFactory.getLogger(LineParser.class);
-    private  Map<Integer,String> lineMapper = new ConcurrentHashMap<>();
-    public  void parseFile(File fileToParse){
+    private Map<Integer, String> lineMapper = new ConcurrentHashMap<>();
+
+    public void parseFile(File fileToParse) {
 
         try {
-            logger.info("The file to parse is: "  + fileToParse.getCanonicalPath());
+            logger.info("The file to parse is: " + fileToParse.getCanonicalPath());
             FileReader fileReader =
                     new FileReader(fileToParse.getCanonicalFile());
             BufferedReader bufferedReader = new BufferedReader(fileReader);
             String line = bufferedReader.readLine();
-            int lineNum=0;
-            while(line != null){
-                lineMapper.put(++lineNum,StringUtils.trim(line));
-                line=bufferedReader.readLine();
+            int lineNum = 0;
+            while (line != null) {
+                lineMapper.put(++lineNum, StringUtils.trim(line));
+                line = bufferedReader.readLine();
             }
         } catch (IOException e) {
             e.printStackTrace();
         }
     }
-    public boolean isSeparateLine(int lineNum){
+
+    public boolean isSeparateLine(int lineNum) {
         String line = lineMapper.get(lineNum);
-        if(hasNoHeader(line)||hasNoEnd(line)){
+        if (hasNoHeader(line) || hasNoEnd(line)) {
             return false;
         }
         return true;
     }
 
     private boolean hasNoEnd(String line) {
-        return !line.endsWith(";") &&  !line.endsWith("{") && !line.endsWith("}");
+        return !line.endsWith(";") && !line.endsWith("{") && !line.endsWith("}");
     }
 
     private boolean hasNoHeader(String line) {
-        return line.startsWith(".")||line.startsWith("+")||line.startsWith("\"");
+        return line.startsWith(".") || line.startsWith("+") || line.startsWith("\"");
     }
 
-    public void joinLines(){
+    private boolean isComment(String line) {
+        if (StringUtils.startsWith(line, "/*") || StringUtils.startsWith(line, "*") ||
+                StringUtils.startsWith(line, "//")) {
+            return true;
+        }
+        return false;
+    }
+
+    public void joinLines() {
+        lineMapper.forEach((lineNum, line) -> {
+            if (hasNoEnd(line)) {
+                line += lineMapper.get(lineNum + 1);
+                lineMapper.put(lineNum + 1, line);
+                lineMapper.remove(lineNum);
+            }
+        });
         lineMapper.forEach((lineNum,line)->{
-            if(hasNoEnd(line)){
-                line += lineMapper.get(lineNum+1);
-                lineMapper.put(lineNum+1,line);
+            if(isComment(line)){
                 lineMapper.remove(lineNum);
             }
         });
     }
-    public  void parseResult(){
-        lineMapper.forEach((lineNum,line)->{
-            System.out.print(lineNum);
-            System.out.print(":\t");
-            System.out.println(line);
+
+    public void parseResult() {
+        lineMapper.forEach((lineNum, line) -> {
+                    System.out.print(lineNum);
+                    System.out.print(":\t");
+                    System.out.println(line);
                 }
         );
     }
